@@ -1,0 +1,33 @@
+rules_version = '2';
+
+// Reglas de Firestore para la colección "pedidos".
+// Pegalas en Firebase Console > Firestore Database > Reglas.
+// Los clientes pueden crear pedidos nuevos; solo el personal logueado
+// puede leerlos y cambiar su estado. Nadie puede borrarlos.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /pedidos/{codigo} {
+
+      allow create: if request.resource.data.keys().hasOnly(['codigo', 'estado', 'cliente', 'diseno', 'total', 'creado'])
+        && request.resource.data.codigo == codigo
+        && request.resource.data.codigo.matches('MC-[A-Z0-9]{4}')
+        && request.resource.data.estado == 'nuevo'
+        && request.resource.data.total is number
+        && request.resource.data.total > 0
+        && request.resource.data.creado is string
+        && request.resource.data.cliente.nombre is string
+        && request.resource.data.cliente.nombre.size() <= 40
+        && request.resource.data.cliente.telefono is string
+        && request.resource.data.cliente.telefono.size() <= 20
+        && request.resource.data.diseno.mate is string;
+
+      allow read: if request.auth != null;
+
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado'])
+        && request.resource.data.estado in ['nuevo', 'en-preparacion', 'listo', 'entregado'];
+
+      allow delete: if false;
+    }
+  }
+}

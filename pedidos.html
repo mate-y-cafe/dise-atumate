@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Pedidos | MATE & CAFÉ</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700;900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          coffee: '#5C4033',
+          coffeeDark: '#3E2A20',
+          yerba: '#3B5E2B',
+          yerbaLight: '#8BA870',
+          cream: '#FDFBF7',
+          creamAlt: '#EFEAE1',
+          creamDark: '#DFD7C8',
+          wood: '#C8B29B',
+        },
+        fontFamily: {
+          display: ['Fraunces', 'serif'],
+          body: ['Manrope', 'sans-serif'],
+        }
+      }
+    }
+  }
+</script>
+<style>
+  body {
+    font-family: 'Manrope', sans-serif;
+    color: #3E2A20;
+    background-color: #EFEAE1;
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(139,168,112,0.35), transparent 45%),
+      radial-gradient(circle at 85% 15%, rgba(200,178,155,0.45), transparent 50%),
+      linear-gradient(160deg, #FDFBF7 0%, #EFEAE1 45%, #DFD7C8 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  h1, h2, h3, .font-display { font-family: 'Fraunces', serif; }
+  .glass {
+    background: rgba(253, 251, 247, 0.55);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 8px 32px rgba(62, 42, 32, 0.12);
+  }
+  .glass-yerba {
+    background: rgba(59, 94, 43, 0.35);
+    border: 1px solid rgba(253, 251, 247, 0.35);
+  }
+  .field {
+    width: 100%;
+    background: rgba(253,251,247,0.8);
+    border: 1px solid rgba(59,94,43,0.25);
+    border-radius: 0.9rem;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.875rem;
+    color: #3E2A20;
+  }
+  .tab { padding: 0.5rem 1rem; border-radius: 9999px; font-weight: 700; font-size: 0.8rem; white-space: nowrap; color: #3E2A20; }
+  .tab:hover { background: rgba(255,255,255,0.6); }
+  .tab.active { background: #3B5E2B; color: #fff; }
+  button:focus-visible, input:focus-visible { outline: 3px solid #8BA870; outline-offset: 2px; }
+
+  /* Ticket: solo se ve al imprimir */
+  #ticket { display: none; }
+  @media print {
+    @page { size: 80mm auto; margin: 4mm; }
+    body { background: #fff !important; }
+    #app { display: none !important; }
+    #ticket { display: block !important; width: 72mm; color: #000; font-family: 'Manrope', sans-serif; font-size: 12px; line-height: 1.4; }
+    #ticket .t-codigo { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 900; }
+    #ticket hr { border: 0; border-top: 1px dashed #000; margin: 6px 0; }
+  }
+</style>
+</head>
+<body class="antialiased">
+
+<div id="app" class="max-w-6xl mx-auto px-4 py-6">
+  <header class="glass rounded-full px-5 py-3 flex items-center justify-between gap-3 mb-6">
+    <div class="font-display font-black text-lg text-coffeeDark leading-tight">
+      MATE <span class="text-yerba">&amp;</span> CAFÉ
+      <span class="block text-[10px] uppercase tracking-widest text-coffeeDark/60 font-body">Panel de pedidos</span>
+    </div>
+    <button id="btn-salir" onclick="cerrarSesion()" class="hidden glass text-coffeeDark px-4 py-2 rounded-full font-bold text-xs hover:bg-cream transition">Salir</button>
+  </header>
+
+  <div id="aviso" class="hidden mb-6 glass rounded-2xl p-4 text-sm font-semibold text-coffeeDark"></div>
+
+  <!-- Inicio de sesión del personal -->
+  <section id="login" class="hidden glass rounded-[2rem] p-8 max-w-md mx-auto">
+    <h1 class="font-display font-black text-2xl text-coffeeDark mb-1">Ingreso del personal</h1>
+    <p class="text-sm text-coffeeDark/60 mb-6">Usá el usuario que te dio el dueño.</p>
+    <form onsubmit="ingresar(event)" class="space-y-4">
+      <div>
+        <label for="l-email" class="block text-sm font-bold mb-1.5">Email</label>
+        <input id="l-email" type="email" class="field" required autocomplete="username">
+      </div>
+      <div>
+        <label for="l-pass" class="block text-sm font-bold mb-1.5">Contraseña</label>
+        <input id="l-pass" type="password" class="field" required autocomplete="current-password">
+      </div>
+      <button id="btn-ingresar" type="submit" class="w-full bg-yerba text-white font-bold py-3 rounded-full hover:bg-yerba/90 transition">Ingresar</button>
+    </form>
+  </section>
+
+  <!-- Lista de pedidos -->
+  <section id="panel" class="hidden">
+    <div class="flex flex-wrap gap-2 mb-6" id="filtros">
+      <button class="tab glass" data-filtro="activos">Activos</button>
+      <button class="tab glass" data-filtro="nuevo">Nuevos</button>
+      <button class="tab glass" data-filtro="en-preparacion">En preparación</button>
+      <button class="tab glass" data-filtro="listo">Listos</button>
+      <button class="tab glass" data-filtro="entregado">Entregados</button>
+    </div>
+    <div id="lista" class="grid md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+  </section>
+</div>
+
+<div id="ticket"></div>
+
+<script>
+  // Pegá acá la config de tu proyecto Firebase (la misma que en index.html).
+  const FIREBASE_CONFIG = null;
+
+  const ESTADOS = [
+    { id: 'nuevo',          label: 'Nuevo',               siguiente: 'en-preparacion', accion: 'Empezar a preparar' },
+    { id: 'en-preparacion', label: 'En preparación',      siguiente: 'listo',          accion: 'Marcar listo' },
+    { id: 'listo',          label: 'Listo para retirar',  siguiente: 'entregado',      accion: 'Marcar entregado' },
+    { id: 'entregado',      label: 'Entregado',           siguiente: null },
+  ];
+
+  let db = null;
+  let auth = null;
+  let unsub = null;
+  let pedidos = [];
+  let filtro = 'activos';
+
+  const fmt = n => Number(n).toLocaleString('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const hora = iso => new Date(iso).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+
+  function mostrarAviso(texto) {
+    const el = document.getElementById('aviso');
+    el.textContent = texto;
+    el.classList.remove('hidden');
+  }
+
+  function mostrar(id, visible) {
+    document.getElementById(id).classList.toggle('hidden', !visible);
+  }
+
+  if (!FIREBASE_CONFIG) {
+    mostrarAviso('Falta configurar Firebase: pegá la config en pedidos.html y en index.html para ver los pedidos.');
+  } else {
+    try {
+      firebase.initializeApp(FIREBASE_CONFIG);
+      db = firebase.firestore();
+      auth = firebase.auth();
+      auth.onAuthStateChanged(user => (user ? mostrarPanel() : mostrarLogin()));
+    } catch (err) {
+      console.error(err);
+      mostrarAviso('No se pudo conectar con Firebase. Revisá la config.');
+    }
+  }
+
+  function mostrarLogin() {
+    mostrar('login', true);
+    mostrar('panel', false);
+    mostrar('btn-salir', false);
+    if (unsub) { unsub(); unsub = null; }
+  }
+
+  function mostrarPanel() {
+    mostrar('login', false);
+    mostrar('panel', true);
+    mostrar('btn-salir', true);
+    document.getElementById('aviso').classList.add('hidden');
+    if (unsub) unsub();
+    unsub = db.collection('pedidos').orderBy('creado', 'desc').limit(200).onSnapshot(
+      snap => { pedidos = snap.docs.map(d => d.data()); renderPedidos(); },
+      err => mostrarAviso('No se pudieron leer los pedidos: ' + err.code)
+    );
+  }
+
+  async function ingresar(ev) {
+    ev.preventDefault();
+    const boton = document.getElementById('btn-ingresar');
+    boton.disabled = true;
+    try {
+      await auth.signInWithEmailAndPassword(
+        document.getElementById('l-email').value.trim(),
+        document.getElementById('l-pass').value
+      );
+      document.getElementById('l-pass').value = '';
+    } catch (err) {
+      mostrarAviso('Email o contraseña incorrectos.');
+    } finally {
+      boton.disabled = false;
+    }
+  }
+
+  function cerrarSesion() {
+    auth.signOut();
+  }
+
+  // Filtros
+  document.getElementById('filtros').addEventListener('click', e => {
+    const btn = e.target.closest('button[data-filtro]');
+    if (!btn) return;
+    filtro = btn.dataset.filtro;
+    renderPedidos();
+  });
+
+  function pasaFiltro(p) {
+    if (filtro === 'activos') return p.estado !== 'entregado';
+    return p.estado === filtro;
+  }
+
+  function renderPedidos() {
+    document.querySelectorAll('#filtros .tab').forEach(b => {
+      const activo = b.dataset.filtro === filtro;
+      b.classList.toggle('active', activo);
+      b.classList.toggle('glass', !activo);
+    });
+
+    const nuevos = pedidos.filter(p => p.estado === 'nuevo').length;
+    document.title = (nuevos ? `(${nuevos}) ` : '') + 'Pedidos | MATE & CAFÉ';
+
+    const visibles = pedidos.filter(pasaFiltro);
+    document.getElementById('lista').innerHTML = visibles.length
+      ? visibles.map(tarjeta).join('')
+      : '<p class="text-sm text-coffeeDark/60 col-span-full text-center py-10">No hay pedidos en esta vista.</p>';
+  }
+
+  function tarjeta(p) {
+    const estado = ESTADOS.find(e => e.id === p.estado) || ESTADOS[0];
+    const d = p.diseno || {};
+    const accesorios = d.accesorios && d.accesorios.length ? d.accesorios.map(esc).join(', ') : 'Ninguno';
+    const codigo = esc(p.codigo);
+    return `
+      <article class="glass rounded-[1.5rem] p-5 flex flex-col gap-3">
+        <div class="flex justify-between items-start gap-3">
+          <div>
+            <p class="font-display font-black text-xl">${codigo}</p>
+            <p class="text-xs text-coffeeDark/60">${esc(hora(p.creado))}</p>
+          </div>
+          <span class="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full glass-yerba">${estado.label}</span>
+        </div>
+        <div class="text-sm space-y-1">
+          <p><b>Uso:</b> ${esc(d.uso)}</p>
+          <p><b>Mate:</b> ${esc(d.mate)}</p>
+          <p><b>Yerba:</b> ${esc(d.yerba)}</p>
+          <p><b>Bombilla:</b> ${esc(d.bombilla)}</p>
+          <p><b>Accesorios:</b> ${accesorios}</p>
+          <p><b>Grabado:</b> ${d.grabado ? esc(d.grabado) : 'Sin grabado'}</p>
+          ${d.nota ? `<p class="mt-2 p-2 rounded-xl bg-yerba/10"><b>Nota:</b> ${esc(d.nota)}</p>` : ''}
+        </div>
+        <p class="text-sm"><b>Cliente:</b> ${esc(p.cliente && p.cliente.nombre)} · ${esc(p.cliente && p.cliente.telefono)}</p>
+        <div class="flex flex-wrap justify-between items-center gap-3 mt-auto pt-3 border-t border-coffeeDark/10">
+          <span class="font-display font-black text-lg">${fmt(p.total)}</span>
+          <div class="flex flex-wrap gap-2">
+            <button data-accion="ticket" data-codigo="${codigo}" class="glass text-coffeeDark px-3.5 py-2 rounded-full font-bold text-xs hover:bg-cream transition">🖨️ Ticket</button>
+            ${estado.siguiente ? `<button data-accion="avanzar" data-codigo="${codigo}" data-estado="${estado.siguiente}" class="bg-yerba text-white px-3.5 py-2 rounded-full font-bold text-xs hover:bg-yerba/90 transition">${estado.accion}</button>` : ''}
+          </div>
+        </div>
+      </article>`;
+  }
+
+  // Acciones de cada tarjeta (delegación, así el código nunca se mete en un onclick)
+  document.getElementById('lista').addEventListener('click', e => {
+    const btn = e.target.closest('button[data-accion]');
+    if (!btn) return;
+    const { accion, codigo, estado } = btn.dataset;
+    if (accion === 'ticket') imprimirTicket(codigo);
+    if (accion === 'avanzar') avanzar(codigo, estado);
+  });
+
+  async function avanzar(codigo, estado) {
+    try {
+      await db.collection('pedidos').doc(codigo).update({ estado });
+    } catch (err) {
+      console.error(err);
+      mostrarAviso(`No se pudo actualizar el pedido ${codigo}.`);
+    }
+  }
+
+  function imprimirTicket(codigo) {
+    const p = pedidos.find(x => x.codigo === codigo);
+    if (!p) return;
+    const d = p.diseno || {};
+    const ticket = document.getElementById('ticket');
+    ticket.innerHTML = `
+      <p>MATE &amp; CAFÉ</p>
+      <p class="t-codigo">${esc(p.codigo)}</p>
+      <p>${esc(hora(p.creado))}</p>
+      <hr>
+      <p><b>Uso:</b> ${esc(d.uso)}</p>
+      <p><b>Mate:</b> ${esc(d.mate)}</p>
+      <p><b>Yerba:</b> ${esc(d.yerba)}</p>
+      <p><b>Bombilla:</b> ${esc(d.bombilla)}</p>
+      <p><b>Accesorios:</b> ${d.accesorios && d.accesorios.length ? d.accesorios.map(esc).join(', ') : 'Ninguno'}</p>
+      <p><b>Grabado:</b> ${d.grabado ? esc(d.grabado) : 'Sin grabado'}</p>
+      ${d.nota ? `<p><b>Nota:</b> ${esc(d.nota)}</p>` : ''}
+      <hr>
+      <p><b>Cliente:</b> ${esc(p.cliente && p.cliente.nombre)}</p>
+      <p><b>Total:</b> ${fmt(p.total)}</p>`;
+    window.print();
+  }
+
+  renderPedidos();
+</script>
+</body>
+</html>

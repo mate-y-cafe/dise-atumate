@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MATE & CAFÉ | Cafetería de Especialidad & Boutique del Mate</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700;900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          coffee: '#5C4033',
+          coffeeDark: '#3E2A20',
+          yerba: '#3B5E2B',
+          yerbaLight: '#8BA870',
+          cream: '#FDFBF7',
+          creamAlt: '#EFEAE1',
+          creamDark: '#DFD7C8',
+          wood: '#C8B29B',
+        },
+        fontFamily: {
+          display: ['Fraunces', 'serif'],
+          body: ['Manrope', 'sans-serif'],
+        }
+      }
+    }
+  }
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Manrope', sans-serif;
+    color: #3E2A20;
+    background-color: #EFEAE1;
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(139,168,112,0.35), transparent 45%),
+      radial-gradient(circle at 85% 15%, rgba(200,178,155,0.45), transparent 50%),
+      radial-gradient(circle at 75% 70%, rgba(59,94,43,0.25), transparent 45%),
+      radial-gradient(circle at 20% 80%, rgba(92,64,51,0.25), transparent 50%),
+      linear-gradient(160deg, #FDFBF7 0%, #EFEAE1 45%, #DFD7C8 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  h1, h2, h3, .font-display { font-family: 'Fraunces', serif; }
+  .blob { position: fixed; border-radius: 9999px; filter: blur(70px); z-index: 0; pointer-events: none; }
+  .glass {
+    background: rgba(253, 251, 247, 0.45);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 8px 32px rgba(62, 42, 32, 0.12);
+  }
+  .glass-dark {
+    background: rgba(62, 42, 32, 0.85);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(253, 251, 247, 0.18);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  }
+  .glass-yerba {
+    background: rgba(59, 94, 43, 0.35);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(253, 251, 247, 0.35);
+  }
+  .glass-card {
+    background: rgba(253, 251, 247, 0.55);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    transition: all 0.3s ease;
+  }
+  .glass-card:hover {
+    transform: translateY(-5px);
+    background: rgba(253, 251, 247, 0.75);
+    box-shadow: 0 16px 40px rgba(62, 42, 32, 0.15);
+  }
+  /* Personalizador "Diseñá tu mate" */
+  .opt { color: #3E2A20; border: 1px solid rgba(255,255,255,0.6); transition: all 0.25s ease; }
+  .opt:hover { background: rgba(253,251,247,0.8); }
+  .opt .check { opacity: 0; transition: opacity 0.2s ease; font-weight: 800; }
+  .badge { display: inline-block; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 8px; border-radius: 9999px; background: rgba(59,94,43,0.14); color: #3B5E2B; margin-bottom: 4px; }
+  .opt.is-selected .badge { background: rgba(253,251,247,0.22); color: #FDFBF7; }
+  .opt.is-selected { background: #3B5E2B; color: #FDFBF7; border-color: rgba(253,251,247,0.35); box-shadow: 0 12px 28px rgba(59,94,43,0.35); }
+  .opt.is-selected .check { opacity: 1; }
+  .opt .swatch { width: 1.5rem; height: 1.5rem; flex-shrink: 0; border-radius: 9999px; border: 2px solid rgba(255,255,255,0.7); box-shadow: inset -3px -4px 6px rgba(0,0,0,0.18); }
+  .pv-caption { font-size: 0.75rem; line-height: 1.5; color: rgba(253,251,247,0.7); min-height: 3.5rem; }
+  .pv-caption b { color: #FDFBF7; }
+  #pv-stage svg { display: block; margin: 0 auto; max-height: 13rem; }
+  @media (min-width: 1024px) { #pv-stage svg { max-height: 26rem; } }
+  input:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid #8BA870; outline-offset: 2px; }
+  .field { width: 100%; background: rgba(253,251,247,0.7); border: 1px solid rgba(59,94,43,0.25); border-radius: 0.9rem; padding: 0.7rem 0.9rem; font-size: 0.875rem; color: #3E2A20; }
+  .field::placeholder { color: rgba(62,42,32,0.45); }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body class="antialiased relative overflow-x-hidden">
+
+<div class="blob w-[28rem] h-[28rem] bg-yerbaLight/40 -top-24 -left-24"></div>
+<div class="blob w-[24rem] h-[24rem] bg-wood/50 top-1/4 -right-20"></div>
+
+<div class="relative z-10">
+
+<!-- NAV -->
+<header class="sticky top-3 z-40 px-3 sm:px-6 mt-3">
+  <nav class="max-w-7xl mx-auto glass rounded-full px-6 py-3 flex items-center justify-between">
+    <a href="#inicio" class="flex items-center gap-2">
+      <span class="text-3xl">🧉</span>
+      <div class="leading-none">
+        <span class="block font-display font-black text-xl text-coffeeDark">MATE <span class="text-yerba">&</span> CAFÉ</span>
+        <span class="block text-[10px] uppercase tracking-widest text-coffeeDark/70">Cafetería & Boutique</span>
+      </div>
+    </a>
+
+    <ul class="hidden lg:flex items-center gap-8 font-semibold text-sm text-coffeeDark">
+      <li><a href="#boutique" class="hover:text-yerba transition-colors">Boutique</a></li>
+      <li><a href="#disena-tu-mate" class="hover:text-yerba transition-colors whitespace-nowrap">Diseñá tu Mate</a></li>
+      <li><a href="cafeteria.html#menu" class="hover:text-yerba transition-colors">Menú del Local</a></li>
+      <li><a href="#contacto" class="hover:text-yerba transition-colors">Contacto</a></li>
+    </ul>
+
+    <div class="flex items-center gap-2">
+      <div class="hidden sm:flex items-center gap-2">
+        <a href="cafeteria.html" class="flex items-center gap-1.5 glass text-coffeeDark px-3.5 py-2 rounded-full font-bold text-xs hover:bg-cream/60 transition-colors">
+          ☕ Cultivo
+        </a>
+        <a href="mate.html" class="flex items-center gap-1.5 glass text-coffeeDark px-3.5 py-2 rounded-full font-bold text-xs hover:bg-cream/60 transition-colors">
+          🧉 Yerbal
+        </a>
+      </div>
+      <button id="open-cart-btn" class="relative flex items-center gap-2 glass-yerba text-coffeeDark px-4 py-2 rounded-full font-bold text-sm transition-transform active:scale-95">
+        <span>🛒 Carrito</span>
+        <span id="cart-count" class="bg-yerba text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center">0</span>
+      </button>
+    </div>
+  </nav>
+</header>
+
+<!-- HERO SECTION -->
+<section id="inicio" class="px-4 sm:px-6 py-16">
+  <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-10 items-center">
+    <div class="glass rounded-[2rem] p-8 sm:p-10">
+      <span class="inline-block glass-yerba text-coffeeDark font-bold text-xs uppercase tracking-widest px-4 py-1.5 rounded-full mb-6">
+        ☕ Café de especialidad + 🧉 Cultura del mate
+      </span>
+      <h1 class="font-display font-black text-4xl sm:text-6xl text-coffeeDark leading-tight mb-6">
+        El encuentro entre el <span class="text-yerba italic">mate</span> y el <span class="text-coffee">café</span>
+      </h1>
+      <p class="text-base text-coffeeDark/80 mb-8 leading-relaxed">
+        Disfrutá de nuestra pastelería artesanal y café de origen en nuestro local, o comprá kits de mate personalizados para llevarte la experiencia a tu casa.
+      </p>
+      <div class="flex flex-wrap gap-4">
+        <a href="#boutique" class="bg-yerba text-white font-bold px-7 py-3.5 rounded-full shadow-lg hover:bg-yerba/90 transition">
+          🧉 Ver Tienda Online
+        </a>
+        <a href="#disena-tu-mate" class="glass text-coffeeDark font-bold px-7 py-3.5 rounded-full hover:bg-cream transition">
+          ✨ Diseñá tu Mate
+        </a>
+      </div>
+    </div>
+
+    <div class="aspect-square rounded-[2.5rem] glass-yerba flex items-center justify-center text-[10rem] shadow-xl">
+      🧉
+    </div>
+  </div>
+</section>
+
+<!-- ACCESO A LAS DOS EXPERIENCIAS -->
+<section class="px-4 sm:px-6 pb-4">
+  <div class="max-w-7xl mx-auto grid sm:grid-cols-2 gap-5">
+    <a href="cafeteria.html" class="glass-card rounded-[1.75rem] p-6 flex items-center gap-4 group">
+      <div class="w-16 h-16 shrink-0 rounded-2xl glass-yerba flex items-center justify-center text-3xl group-hover:scale-105 transition-transform">☕</div>
+      <div>
+        <p class="text-yerba font-bold text-[11px] uppercase tracking-widest mb-0.5">Sentate con nosotros</p>
+        <p class="font-display font-black text-lg text-coffeeDark leading-tight">Conocé Cultivo</p>
+        <p class="text-xs text-coffeeDark/60 mt-0.5">Café de especialidad y pastelería →</p>
+      </div>
+    </a>
+    <a href="mate.html" class="glass-card rounded-[1.75rem] p-6 flex items-center gap-4 group">
+      <div class="w-16 h-16 shrink-0 rounded-2xl glass-yerba flex items-center justify-center text-3xl group-hover:scale-105 transition-transform">🧉</div>
+      <div>
+        <p class="text-yerba font-bold text-[11px] uppercase tracking-widest mb-0.5">Llevate el ritual</p>
+        <p class="font-display font-black text-lg text-coffeeDark leading-tight">Conocé Yerbal</p>
+        <p class="text-xs text-coffeeDark/60 mt-0.5">Boutique de mates y yerbas →</p>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- BOUTIQUE CON FILTROS -->
+<section id="boutique" class="py-16 px-4 sm:px-6">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center max-w-2xl mx-auto mb-8">
+      <span class="text-yerba font-bold text-xs uppercase tracking-widest">Tienda Online</span>
+      <h2 class="font-display font-black text-3xl sm:text-4xl text-coffeeDark mt-2">Boutique de Productos</h2>
+    </div>
+
+    <!-- Filtros -->
+    <div class="flex flex-wrap justify-center gap-2 mb-10" id="filter-buttons">
+      <button onclick="filterProducts('Todos')" class="filter-btn bg-yerba text-white px-5 py-2 rounded-full font-bold text-xs">Todos</button>
+      <button onclick="filterProducts('Mates')" class="filter-btn glass text-coffeeDark px-5 py-2 rounded-full font-bold text-xs hover:bg-cream">Mates</button>
+      <button onclick="filterProducts('Yerbas')" class="filter-btn glass text-coffeeDark px-5 py-2 rounded-full font-bold text-xs hover:bg-cream">Yerbas</button>
+      <button onclick="filterProducts('Termos')" class="filter-btn glass text-coffeeDark px-5 py-2 rounded-full font-bold text-xs hover:bg-cream">Termos</button>
+      <button onclick="filterProducts('Bombillas')" class="filter-btn glass text-coffeeDark px-5 py-2 rounded-full font-bold text-xs hover:bg-cream">Bombillas</button>
+    </div>
+
+    <div id="product-grid" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+  </div>
+</section>
+
+<!-- DISEÑÁ TU MATE (PERSONALIZADOR) -->
+<section id="disena-tu-mate" class="py-12 px-4 sm:px-6 scroll-mt-28">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center max-w-2xl mx-auto mb-8">
+      <span class="text-yerba font-bold text-xs uppercase tracking-widest">Personalizador</span>
+      <h2 class="font-display font-black text-3xl sm:text-4xl text-coffeeDark mt-2">Diseñá tu mate</h2>
+      <p class="text-coffeeDark/70 mt-3">Elegí cada pieza, mirá cómo queda y mandá tu pedido. Lo preparamos para que lo retires en el local.</p>
+    </div>
+
+    <div class="grid lg:grid-cols-5 gap-8 items-start">
+      <!-- Vista previa -->
+      <!-- La vista previa queda fija mientras elegís: en celular se ve arriba de las opciones -->
+      <aside class="lg:col-span-2 sticky top-20 lg:top-28 z-30 glass-dark text-cream rounded-[2rem] p-4 sm:p-6">
+        <div class="flex justify-between items-center gap-3">
+          <p class="text-[11px] uppercase tracking-widest text-cream/60">Vista previa</p>
+          <p class="text-sm font-bold">Total <span id="pv-total" class="font-display font-black text-xl ml-1">$0</span></p>
+        </div>
+        <div id="pv-stage"></div>
+        <p id="pv-resumen" class="lg:hidden text-xs text-cream/80 text-center"></p>
+        <p id="pv-caption" class="pv-caption mt-3 hidden lg:block"></p>
+        <ul id="pv-lista" class="hidden lg:block space-y-2 text-sm border-t border-cream/20 pt-4 mt-4"></ul>
+        <p class="hidden lg:block text-xs text-cream/60 mt-4">Pagás en caja al retirar.</p>
+      </aside>
+
+      <!-- Pasos -->
+      <div class="lg:col-span-3 space-y-4">
+        <div class="glass rounded-[2rem] p-5 sm:p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="w-11 h-11 shrink-0 rounded-full glass-yerba text-coffeeDark font-display font-black flex items-center justify-center">01</span>
+            <div>
+              <h3 class="font-display font-bold text-lg text-coffeeDark leading-tight">¿Para qué es el mate?</h3>
+              <p class="text-xs text-coffeeDark/60">Según el uso te marcamos lo recomendado en cada paso</p>
+            </div>
+          </div>
+          <div id="opts-uso" class="grid sm:grid-cols-2 gap-3"></div>
+        </div>
+
+        <div class="glass rounded-[2rem] p-5 sm:p-6">
+          <div class="flex items-center gap-3 mb-5">
+            <span class="w-11 h-11 shrink-0 rounded-full glass-yerba text-coffeeDark font-display font-black flex items-center justify-center">02</span>
+            <div>
+              <h3 class="font-display font-bold text-lg text-coffeeDark leading-tight">Elegí el mate</h3>
+              <p class="text-xs text-coffeeDark/60">Cuerpo y material</p>
+            </div>
+          </div>
+          <div id="opts-mate" class="grid sm:grid-cols-2 gap-3"></div>
+        </div>
+
+        <div class="glass rounded-[2rem] p-5 sm:p-6">
+          <div class="flex items-center gap-3 mb-5">
+            <span class="w-11 h-11 shrink-0 rounded-full glass-yerba text-coffeeDark font-display font-black flex items-center justify-center">03</span>
+            <div>
+              <h3 class="font-display font-bold text-lg text-coffeeDark leading-tight">Elegí la yerba</h3>
+              <p class="text-xs text-coffeeDark/60">El blend que vas a cebar</p>
+            </div>
+          </div>
+          <div id="opts-yerba" class="grid sm:grid-cols-2 gap-3"></div>
+        </div>
+
+        <div class="glass rounded-[2rem] p-5 sm:p-6">
+          <div class="flex items-center gap-3 mb-5">
+            <span class="w-11 h-11 shrink-0 rounded-full glass-yerba text-coffeeDark font-display font-black flex items-center justify-center">04</span>
+            <div>
+              <h3 class="font-display font-bold text-lg text-coffeeDark leading-tight">Elegí la bombilla</h3>
+              <p class="text-xs text-coffeeDark/60">Material y filtro</p>
+            </div>
+          </div>
+          <div id="opts-bombilla" class="grid sm:grid-cols-2 gap-3"></div>
+        </div>
+
+        <div class="glass rounded-[2rem] p-5 sm:p-6">
+          <div class="flex items-center gap-3 mb-5">
+            <span class="w-11 h-11 shrink-0 rounded-full glass-yerba text-coffeeDark font-display font-black flex items-center justify-center">05</span>
+            <div>
+              <h3 class="font-display font-bold text-lg text-coffeeDark leading-tight">Sumá accesorios</h3>
+              <p class="text-xs text-coffeeDark/60">Opcional · podés elegir varios</p>
+            </div>
+          </div>
+          <div id="opts-accesorios" class="grid sm:grid-cols-2 gap-3"></div>
+        </div>
+
+        <div class="glass rounded-[2rem] p-5 sm:p-6">
+          <div class="flex items-center gap-3 mb-5">
+            <span class="w-11 h-11 shrink-0 rounded-full glass-yerba text-coffeeDark font-display font-black flex items-center justify-center">06</span>
+            <div>
+              <h3 class="font-display font-bold text-lg text-coffeeDark leading-tight">Personalizalo y enviá el pedido</h3>
+              <p class="text-xs text-coffeeDark/60">Grabado y tus datos para retirarlo</p>
+            </div>
+          </div>
+          <form id="pedido-form" onsubmit="enviarPedido(event)" class="space-y-4">
+            <div>
+              <label for="f-grabado" class="block text-sm font-bold text-coffeeDark mb-1.5">Grabado en el mate <span id="lbl-grabado-extra" class="font-normal text-coffeeDark/60">(opcional, hasta 14 caracteres)</span></label>
+              <input id="f-grabado" class="field" maxlength="14" placeholder="Ej: Ana, Mate de Lucas" oninput="actualizarPreview()">
+            </div>
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label for="f-nombre" class="block text-sm font-bold text-coffeeDark mb-1.5">Tu nombre *</label>
+                <input id="f-nombre" class="field" required maxlength="40" placeholder="Nombre y apellido" autocomplete="name">
+              </div>
+              <div>
+                <label for="f-telefono" class="block text-sm font-bold text-coffeeDark mb-1.5">Teléfono / WhatsApp *</label>
+                <input id="f-telefono" type="tel" class="field" required maxlength="20" pattern="[0-9 +\-\(\)]{6,20}" placeholder="11 2345-6789" autocomplete="tel">
+              </div>
+            </div>
+            <div>
+              <label for="f-nota" class="block text-sm font-bold text-coffeeDark mb-1.5"><span id="lbl-nota">Nota para quien arma el mate</span> <span class="font-normal text-coffeeDark/60">(opcional)</span></label>
+              <textarea id="f-nota" class="field" rows="2" maxlength="200" placeholder="Ej: que la bombilla sea más angosta"></textarea>
+            </div>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+              <p class="text-xs text-coffeeDark/60 max-w-xs">Te damos un código de pedido. Mostralo en caja al retirar tu mate.</p>
+              <button id="btn-enviar" type="submit" class="bg-yerba text-white font-extrabold px-8 py-4 rounded-full shadow-lg hover:bg-yerba/90 transition active:scale-95">📨 Enviar pedido al cajero</button>
+            </div>
+          </form>
+          <div id="pedido-confirmacion" class="hidden mt-6 bg-yerba/10 border border-yerba/25 rounded-2xl p-4 text-sm"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer id="contacto" class="px-4 py-8">
+  <div class="max-w-7xl mx-auto glass-dark rounded-[2rem] p-8 text-cream/80 text-center text-xs">
+    <p class="font-display font-bold text-lg text-cream mb-2">MATE & CAFÉ</p>
+    <p class="mb-4">Av. Yerba Mate 1801, Palermo, CABA, Argentina</p>
+    <p>© 2026 MATE & CAFÉ. Todos los derechos reservados.</p>
+  </div>
+</footer>
+
+</div>
+
+<!-- DRAWER DE CARRITO LATERAL -->
+<div id="cart-drawer" class="fixed inset-0 bg-black/50 z-50 hidden">
+  <div class="absolute right-0 top-0 h-full w-full max-w-md glass-dark text-cream p-6 flex flex-col justify-between">
+    <div>
+      <div class="flex justify-between items-center mb-6 border-b border-cream/20 pb-4">
+        <h3 class="font-display font-bold text-xl">Tu Carrito</h3>
+        <button onclick="closeCart()" class="text-cream/60 hover:text-white font-bold text-lg">✕</button>
+      </div>
+      <div id="cart-items" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2"></div>
+    </div>
+
+    <div class="border-t border-cream/20 pt-4">
+      <div class="flex justify-between font-bold text-lg mb-4">
+        <span>Total:</span>
+        <span id="cart-total">$0</span>
+      </div>
+      <button onclick="checkoutWhatsApp()" class="w-full bg-yerba text-white font-bold py-3.5 rounded-full hover:bg-yerba/90 transition">
+        📱 Pedir por WhatsApp
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const products = [
+    { cat: 'Mates', icon: '🧉', name: 'Mate Imperial de Algarrobo', desc: 'Tallado a mano, virolado en alpaca.', price: 18500 },
+    { cat: 'Mates', icon: '🍐', name: 'Mate Calabaza Curado', desc: 'Curado tradicional, listo para usar.', price: 9800 },
+    { cat: 'Yerbas', icon: '🌿', name: 'Yerba Orgánica Suave', desc: 'Sin palo, cultivo orgánico certificado.', price: 4200 },
+    { cat: 'Yerbas', icon: '🍃', name: 'Yerba con Palo Tradicional', desc: 'Blend clásico de larga estacionada.', price: 3600 },
+    { cat: 'Termos', icon: '🧴', name: 'Termo Acero Inoxidable 1L', desc: 'Mantiene la temperatura 12+ horas.', price: 22900 },
+    { cat: 'Bombillas', icon: '🥄', name: 'Bombilla de Alpaca Clásica', desc: 'Pico curvo, filtro removible.', price: 7300 },
+  ];
+
+  let cart = [];
+  const fmt = n => n.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
+
+  function renderProducts(items) {
+    const grid = document.getElementById('product-grid');
+    grid.innerHTML = items.map((p) => `
+      <div class="glass-card rounded-[1.5rem] overflow-hidden flex flex-col p-5">
+        <div class="h-32 flex items-center justify-center text-5xl mb-3">${p.icon}</div>
+        <span class="self-start text-[10px] font-bold uppercase text-coffeeDark glass-yerba px-2.5 py-1 rounded-full mb-2">${p.cat}</span>
+        <h3 class="font-display font-bold text-coffeeDark text-base mb-1">${p.name}</h3>
+        <p class="text-xs text-coffeeDark/70 mb-4 flex-1">${p.desc}</p>
+        <div class="flex items-center justify-between mt-auto">
+          <span class="font-display font-black text-base text-coffeeDark">${fmt(p.price)}</span>
+          <button onclick="addToCart('${p.name}', ${p.price})" class="bg-coffeeDark text-cream font-bold text-xs px-4 py-2 rounded-full hover:bg-yerba transition">
+            + Agregar
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function filterProducts(cat) {
+    const btns = document.querySelectorAll('.filter-btn');
+    btns.forEach(b => b.classList.replace('bg-yerba', 'glass'));
+    event.target.classList.add('bg-yerba');
+    event.target.classList.remove('glass');
+
+    if (cat === 'Todos') renderProducts(products);
+    else renderProducts(products.filter(p => p.cat === cat));
+  }
+
+  function addToCart(name, price) {
+    cart.push({ name, price });
+    updateCartUI();
+  }
+
+  function updateCartUI() {
+    document.getElementById('cart-count').innerText = cart.length;
+    const cartItemsEl = document.getElementById('cart-items');
+    let total = 0;
+
+    cartItemsEl.innerHTML = cart.map((item, idx) => {
+      total += item.price;
+      return `
+        <div class="flex justify-between items-center p-3 glass rounded-xl">
+          <div>
+            <p class="font-bold text-sm">${item.name}</p>
+            <p class="text-xs text-cream/70">${fmt(item.price)}</p>
+          </div>
+          <button onclick="removeFromCart(${idx})" class="text-red-400 font-bold text-xs">Quitar</button>
+        </div>
+      `;
+    }).join('');
+
+    document.getElementById('cart-total').innerText = fmt(total);
+  }
+
+  function removeFromCart(idx) {
+    cart.splice(idx, 1);
+    updateCartUI();
+  }
+
+  // Controles de Carrito
+  document.getElementById('open-cart-btn').onclick = () => document.getElementById('cart-drawer').classList.remove('hidden');
+  function closeCart() { document.getElementById('cart-drawer').classList.add('hidden'); }
+
+  function checkoutWhatsApp() {
+    if (cart.length === 0) return alert('Tu carrito está vacío');
+    let msg = 'Hola MATE %26 CAFÉ, quiero encargar:%0A';
+    cart.forEach(i => msg += `- ${i.name} (${fmt(i.price)})%0A`);
+    window.open(`https://wa.me/5491100000000?text=${msg}`, '_blank');
+  }
+
+  // ---------- Diseñá tu mate ----------
+  // Catálogo del personalizador. "rec" marca lo recomendado para cada uso.
+  // Precios de referencia: revisar antes de publicar.
+  const USOS = [
+    { id: 'diario', nombre: 'Para mi uso diario', desc: 'Lo cebo todos los días: prioriza limpieza, durabilidad y comodidad.' },
+    { id: 'recuerdo', nombre: 'Para regalar o de recuerdo', desc: 'Prioriza el grabado, la presentación y las piezas de colección.' },
+  ];
+
+  const DISENO = {
+    mate: [
+      { id: 'calabaza',  nombre: 'Calabaza imperial',       desc: 'Curada a mano. El sabor más clásico y redondo.', cuidado: 'Necesita curado antes del primer uso. Lavar con agua tibia, sin detergente fuerte, y dejar secar.', rec: ['diario'], precio: 9800, color: '#3B2A1E' },
+      { id: 'algarrobo', nombre: 'Camionero de algarrobo',  desc: 'Madera dura argentina, boca ancha y muy duradero.', cuidado: 'Madera: no dejar con agua ni lavar en lavavajillas. Secar al aire.', rec: ['recuerdo'], precio: 18500, color: '#6B3A22' },
+      { id: 'torpedo',   nombre: 'Torpedo de acero',        desc: 'Cero curado, cero mantenimiento. Ideal para la oficina.', cuidado: 'Acero inoxidable: se lava con agua y esponja, no necesita curado.', rec: ['diario'], precio: 14700, color: '#B8BEC2' },
+      { id: 'ceramica',  nombre: 'Cerámica esmaltada',      desc: 'Neutro en sabor y fácil de lavar. Colores de autor.', cuidado: 'Esmalte pintado a mano: lavar a mano y evitar golpes en el borde.', rec: ['recuerdo'], precio: 12300, color: '#2E6B6A' },
+    ],
+    yerba: [
+      { id: 'suave',    nombre: 'Serrana suave',           desc: 'Barbacuá liviano, poco polvo. Para tardes largas.', perfil: 'Liviana, para el día a día', rec: ['diario'], precio: 4200, color: '#8BA870' },
+      { id: 'ahumada',  nombre: 'Barbacuá ahumada',        desc: 'Secado a leña, cuerpo intenso y final largo.', perfil: 'Intensa, para quien ya toma mate', rec: [], precio: 4200, color: '#3F4D2B' },
+      { id: 'citrica',  nombre: 'Cítrica del litoral',     desc: 'Con peperina y cáscara de naranja. Fresca.', perfil: 'Fresca y aromática', rec: ['recuerdo'], precio: 4500, color: '#8FA64F' },
+      { id: 'guarana',  nombre: 'Despertar con guaraná',   desc: 'Más energía, ideal para arrancar el día.', perfil: 'Con energía para la mañana', rec: ['diario'], precio: 4100, color: '#5E6F3F' },
+    ],
+    bombilla: [
+      { id: 'alpaca',     nombre: 'Alpaca pico de loro',   desc: 'La clásica. Filtro de resorte, fácil de limpiar.', rec: ['diario'], precio: 7300, color: '#B9BEC1' },
+      { id: 'desarmable', nombre: 'Acero desarmable',      desc: 'Se abre en dos: la más higiénica del mostrador.', rec: ['diario'], precio: 5500, color: '#8A8F92' },
+      { id: 'bambu',      nombre: 'Bambú artesanal',       desc: 'No transmite calor. Sabor suave y muy liviana.', rec: [], precio: 4800, color: '#D6C29B' },
+      { id: 'cincelada',  nombre: 'Alpaca cincelada',      desc: 'Trabajada a mano, pieza de colección.', rec: ['recuerdo'], precio: 11200, color: '#D9C48A' },
+    ],
+    accesorios: [
+      { id: 'termo',   nombre: 'Termo 1 L de acero',      desc: 'Doce horas de temperatura. Pico cebador.', rec: ['diario'], precio: 22900 },
+      { id: 'matera',  nombre: 'Matera de cuero',         desc: 'Cosida a mano, con espacio para termo y yerbera.', rec: ['diario'], precio: 34900 },
+      { id: 'yerbera', nombre: 'Yerbera + azucarera',     desc: 'Set de dos piezas a juego con tu mate.', rec: ['recuerdo'], precio: 8900 },
+      { id: 'regalo',  nombre: 'Caja de regalo',          desc: 'Caja de madera, tarjeta escrita a mano y moño.', rec: ['recuerdo'], precio: 6500 },
+    ],
+  };
+
+  const diseno = { uso: 'diario', mate: 'calabaza', yerba: 'suave', bombilla: 'alpaca', accesorios: [] };
+  const buscarItem = (grupo, id) => DISENO[grupo].find(it => it.id === id);
+
+  const esRecomendado = (it, uso) => (it.rec || []).includes(uso);
+
+  function opcionHTML(grupo, it, seleccionado) {
+    const badge = esRecomendado(it, diseno.uso) ? '<span class="badge">Recomendado</span>' : '';
+    return `
+      <button type="button" class="opt glass-card rounded-2xl p-3 text-left flex items-start gap-3 ${seleccionado ? 'is-selected' : ''}"
+              aria-pressed="${seleccionado}" onclick="elegirDiseno('${grupo}', '${it.id}')">
+        ${it.color ? `<span class="swatch mt-1" style="background:${it.color}"></span>` : ''}
+        <span class="flex-1 min-w-0">
+          ${badge}
+          <span class="block font-bold text-sm">${it.nombre}</span>
+          <span class="block text-xs opacity-75 mt-0.5">${it.desc}</span>
+          ${it.perfil ? `<span class="block text-xs font-semibold mt-1">${it.perfil}</span>` : ''}
+          ${it.precio ? `<span class="block font-display font-black text-sm mt-2">${fmt(it.precio)}</span>` : ''}
+        </span>
+        <span class="check text-sm">✓</span>
+      </button>`;
+  }
+
+  function elegirDiseno(grupo, id) {
+    if (grupo === 'accesorios') {
+      const i = diseno.accesorios.indexOf(id);
+      if (i >= 0) diseno.accesorios.splice(i, 1);
+      else diseno.accesorios.push(id);
+    } else {
+      diseno[grupo] = id;
+    }
+    renderDiseno();
+  }
+
+  // Los recomendados para el uso elegido aparecen primero
+  const ordenar = (lista, uso) => [...lista].sort((a, b) => esRecomendado(b, uso) - esRecomendado(a, uso));
+
+  function renderDiseno() {
+    document.getElementById('opts-uso').innerHTML =
+      USOS.map(u => opcionHTML('uso', u, diseno.uso === u.id)).join('');
+    ['mate', 'yerba', 'bombilla'].forEach(grupo => {
+      document.getElementById(`opts-${grupo}`).innerHTML =
+        ordenar(DISENO[grupo], diseno.uso).map(it => opcionHTML(grupo, it, diseno[grupo] === it.id)).join('');
+    });
+    document.getElementById('opts-accesorios').innerHTML =
+      ordenar(DISENO.accesorios, diseno.uso).map(it => opcionHTML('accesorios', it, diseno.accesorios.includes(it.id))).join('');
+
+    // Textos que cambian según el uso
+    const recuerdo = diseno.uso === 'recuerdo';
+    document.getElementById('lbl-grabado-extra').textContent =
+      recuerdo ? '(nombre, fecha o frase, hasta 14 caracteres)' : '(opcional, hasta 14 caracteres)';
+    document.getElementById('f-grabado').placeholder = recuerdo ? 'Ej: Para Ana · 2026' : 'Ej: Ana, Mate de Lucas';
+    document.getElementById('lbl-nota').textContent = recuerdo ? 'Mensaje para la tarjeta' : 'Nota para quien arma el mate';
+    document.getElementById('f-nota').placeholder = recuerdo ? 'Ej: Feliz cumpleaños, un abrazo' : 'Ej: que la bombilla sea más angosta';
+    actualizarPreview();
+  }
+
+  function calcularTotal() {
+    const elegidos = [
+      buscarItem('mate', diseno.mate),
+      buscarItem('yerba', diseno.yerba),
+      buscarItem('bombilla', diseno.bombilla),
+      ...diseno.accesorios.map(id => buscarItem('accesorios', id)),
+    ];
+    return elegidos.reduce((s, it) => s + it.precio, 0);
+  }
+
+  // ---------- Dibujo del mate (SVG) ----------
+  const escHTML = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // Aclara (amt > 0) u oscurece (amt < 0) un color hex
+  function shade(hex, amt) {
+    const n = parseInt(hex.slice(1), 16);
+    const mezclar = v => Math.round(v + ((amt < 0 ? 0 : 255) - v) * Math.abs(amt));
+    return '#' + [n >> 16, (n >> 8) & 255, n & 255].map(v => mezclar(v).toString(16).padStart(2, '0')).join('');
+  }
+
+  // Forma de cada mate: contorno del cuerpo y boca (centro en x=130, base en y=292)
+  // Forma de cada mate según su descripción del catálogo (centro x=130, base y=292)
+  const FORMAS_MATE = {
+    // Calabaza curada a mano: pera irregular con boca chica
+    calabaza:  { cuerpo: 'M80,104 C74,118 66,130 64,160 C60,192 56,222 60,244 C66,274 96,292 130,292 C164,292 194,274 200,244 C204,222 200,192 196,160 C194,130 186,118 180,104 Z', boca: { cy: 104, rx: 44, ry: 11 } },
+    // Camionero de algarrobo: boca ancha y base casi plana
+    algarrobo: { cuerpo: 'M68,108 L56,240 C54,274 82,292 130,292 C178,292 206,274 204,240 L192,108 Z', boca: { cy: 108, rx: 64, ry: 15 } },
+    // Torpedo de acero: afinado arriba, panza redonda abajo
+    torpedo:   { cuerpo: 'M86,88 C82,120 78,170 80,214 C82,258 102,292 130,292 C158,292 178,258 180,214 C182,170 178,120 174,88 Z', boca: { cy: 88, rx: 44, ry: 10 } },
+    // Cerámica esmaltada: redonda, con pie
+    ceramica:  { cuerpo: 'M78,102 C62,124 58,176 60,214 C63,262 94,292 130,292 C166,292 197,262 200,214 C202,176 198,124 182,102 Z', boca: { cy: 102, rx: 48, ry: 12 } },
+  };
+
+  // Bolitas de yerba según el blend: suave (poco polvo), ahumada (oscura), cítrica (cáscara de naranja), guaraná
+  const YERBA_BOLITAS = {
+    suave:   { color: '#E4EFC6', n: 26, r: 0.7 },
+    ahumada: { color: '#161c12', n: 46, r: 1.1 },
+    citrica: { color: '#F0A93B', n: 18, r: 1.5 },
+    guarana: { color: '#7b4a26', n: 30, r: 1.1 },
+  };
+
+  function svgYerba(yerba, b) {
+    const d = YERBA_BOLITAS[yerba.id];
+    let out = '';
+    for (let i = 0; i < d.n; i++) {
+      // Distribución uniforme dentro de la boca (ángulo dorado)
+      const r = Math.sqrt((i + 0.5) / d.n) * 0.9;
+      const a = i * 2.399;
+      const x = (130 + Math.cos(a) * (b.rx - 7.5) * r).toFixed(1);
+      const y = (b.cy + 1.5 + Math.sin(a) * (b.ry - 4.5) * r).toFixed(1);
+      out += `<circle cx="${x}" cy="${y}" r="${d.r}" fill="${d.color}" opacity=".85"/>`;
+    }
+    return out;
+  }
+
+  function svgBombilla(id, color, x, y, L) {
+    const tubo = 'url(#pv-tubo)';
+    const filtro = (c, cy = 8) => `<ellipse cx="0" cy="${cy}" rx="7.5" ry="10" fill="${shade(c, -0.3)}"/>`;
+    let piezas = '';
+    if (id === 'alpaca') {
+      // Pico de loro: caño con el pico curvo arriba y filtro de resorte abajo (aros visibles)
+      piezas = `
+        <path d="M-3,${-L + 4} Q-3,${-L - 8} -15,${-L - 6}" fill="none" stroke="${tubo}" stroke-width="5" stroke-linecap="round"/>
+        <rect x="-3" y="${-L}" width="6" height="${L}" rx="3" fill="${tubo}"/>
+        ${filtro(color)}
+        <path d="M-6.5,4 Q0,7 6.5,4 M-6.5,9 Q0,12 6.5,9 M-6.5,14 Q0,17 6.5,14" fill="none" stroke="${shade(color, -0.6)}" stroke-width="0.9"/>`;
+    } else if (id === 'desarmable') {
+      // Acero desarmable: dos mitades, junta y rosca visibles, con filtro removible
+      piezas = `
+        <rect x="-3.5" y="${-L}" width="7" height="${L * 0.5}" rx="2" fill="${tubo}"/>
+        <rect x="-4.5" y="${-L * 0.5 - 2}" width="9" height="4" rx="1.5" fill="#4d5357"/>
+        <rect x="-3.5" y="${-L * 0.5 + 2}" width="7" height="${L * 0.5 - 2}" rx="2" fill="${shade(color, -0.12)}"/>
+        <rect x="-4" y="-9" width="8" height="7" rx="1.5" fill="#5f6569"/>
+        ${filtro(color, 6)}`;
+    } else if (id === 'bambu') {
+      // Bambú: caña natural con nudos y filtro de caña abajo
+      let nudos = '';
+      for (let yy = -L + 12; yy < -6; yy += 16) nudos += `<rect x="-4" y="${yy}" width="8" height="2.2" rx="1" fill="#7a5f40"/>`;
+      piezas = `
+        <rect x="-3.8" y="${-L}" width="7.6" height="${L}" rx="3.5" fill="${tubo}"/>
+        ${nudos}
+        <ellipse cx="0" cy="8" rx="6" ry="9" fill="#a8895f"/>`;
+    } else {
+      // Alpaca cincelada: caño con grabado fino de líneas y filtro abajo
+      piezas = `
+        <rect x="-3" y="${-L}" width="6" height="${L}" rx="3" fill="${tubo}"/>
+        <rect x="-3" y="${-L}" width="6" height="${L}" rx="3" fill="url(#pv-cincel)"/>
+        ${filtro(color)}
+        <path d="M-6,4 Q0,0 6,4" fill="none" stroke="#6b5438" stroke-width="0.8"/>`;
+    }
+    return `<g transform="translate(${x} ${y}) rotate(16)">${piezas}</g>`;
+  }
+
+  // Accesorios apilados en la columna derecha, desde la base hacia arriba
+  function svgAccesorios(lista) {
+    let y = 300;
+    return lista.map(a => {
+      let h, out;
+      if (a.id === 'termo') {
+        // Termo 1 L de acero: tapa, pico cebador arriba y reflejo del acero
+        h = 110;
+        const top = y - h, x = 262, w = 30;
+        out = `
+          <rect x="${x}" y="${top + 10}" width="${w}" height="${h - 10}" rx="9" fill="url(#pv-steel)"/>
+          <rect x="${x + 2}" y="${top + 4}" width="${w - 4}" height="9" rx="3" fill="#3f464a"/>
+          <rect x="${x + w / 2 - 4}" y="${top - 3}" width="8" height="8" rx="3" fill="#2f3538"/>
+          <path d="M${x + 6},${top + 26} L${x + 6},${y - 22}" stroke="#fff" stroke-width="2" opacity=".35"/>`;
+      } else if (a.id === 'matera') {
+        // Matera de cuero cosida a mano: asa y costuras
+        h = 66;
+        const top = y - h, x = 254, w = 46;
+        out = `
+          <path d="M${x + 10},${top + 12} Q${x + w / 2},${top - 14} ${x + w - 10},${top + 12}" fill="none" stroke="#5a3820" stroke-width="4" stroke-linecap="round"/>
+          <path d="M${x},${top + 10} L${x + w},${top + 10} L${x + w - 4},${y - 6} Q${x + w / 2},${y} ${x + 4},${y - 6} Z" fill="url(#pv-cuero)"/>
+          <path d="M${x + 5},${top + 16} L${x + w - 5},${top + 16} M${x + 5},${top + 16} L${x + 6},${y - 12} M${x + w - 5},${top + 16} L${x + w - 6},${y - 12}" fill="none" stroke="#e8cfa6" stroke-width="0.9" stroke-dasharray="2 2" opacity=".8"/>`;
+      } else if (a.id === 'regalo') {
+        // Caja de regalo: madera, moño y tarjeta
+        h = 58;
+        const top = y - h, x = 250, w = 52;
+        out = `
+          <rect x="${x - 2}" y="${top + 8}" width="${w + 4}" height="8" rx="2" fill="#8f6240"/>
+          <rect x="${x}" y="${top + 16}" width="${w}" height="${h - 16}" rx="4" fill="#7a5233"/>
+          <rect x="${x + w / 2 - 3}" y="${top + 8}" width="6" height="${h - 8}" fill="#C08A2E"/>
+          <ellipse cx="${x + w / 2 - 7}" cy="${top + 5}" rx="6" ry="4" fill="#C08A2E"/>
+          <ellipse cx="${x + w / 2 + 7}" cy="${top + 5}" rx="6" ry="4" fill="#C08A2E"/>`;
+      } else {
+        // Yerbera + azucarera: dos piezas a juego, apoyadas en la misma base
+        h = 42;
+        const top = y - h;
+        out = `
+          <rect x="246" y="${top + 6}" width="30" height="${h - 6}" rx="6" fill="#C8B29B"/>
+          <rect x="245" y="${top}" width="32" height="8" rx="3" fill="#8c7a66"/>
+          <rect x="250" y="${y - 22}" width="20" height="9" rx="2" fill="#F4EFE3" opacity=".85"/>
+          <rect x="280" y="${y - 30}" width="22" height="30" rx="5" fill="#F4EFE3"/>
+          <rect x="279" y="${y - 32}" width="24" height="6" rx="2" fill="#b9ad98"/>`;
+      }
+      y -= h + 10;
+      return out;
+    }).join('');
+  }
+
+  function svgPreview(mate, yerba, bombilla, accesorios, grabado) {
+    const f = FORMAS_MATE[mate.id];
+    const c = mate.color;
+    const b = f.boca;
+    const cuerpo = f.cuerpo;
+
+    // Detalles según la descripción de cada mate
+    let detalle = '';
+    let fondo = `url(#pv-cuerpo)`;
+    let pie = '';
+    let aro = '';
+    if (mate.id === 'calabaza') {
+      // Curada a mano: manchas oscuras irregulares y grietas finas del curado
+      for (let i = 0; i < 10; i++) {
+        detalle += `<ellipse cx="${70 + ((i * 37) % 110)}" cy="${120 + ((i * 53) % 150)}" rx="${4 + (i % 4) * 2}" ry="${3 + (i % 3) * 2}" fill="#000" opacity=".16"/>`;
+      }
+      detalle += `<path d="M92,150 Q96,134 88,118 M172,200 Q168,180 176,164 M120,230 Q126,250 118,266" fill="none" stroke="#000" stroke-width="0.8" opacity=".35"/>`;
+      aro = `<ellipse cx="130" cy="${b.cy}" rx="${b.rx + 1}" ry="${b.ry + 1}" fill="none" stroke="url(#pv-metal)" stroke-width="2"/>`;
+    } else if (mate.id === 'algarrobo') {
+      // Madera dura argentina: veta irregular y virola de alpaca en la boca ancha
+      for (let i = 0; i < 14; i++) {
+        const x = 58 + i * 11 + Math.sin(i * 2.3) * 3;
+        detalle += `<path d="M${x},100 C${x + 5 + Math.sin(i) * 3},160 ${x - 4},220 ${x + 3},300" fill="none" stroke="${shade(c, -0.4)}" stroke-width="${0.6 + (i % 3) * 0.4}" opacity="${0.25 + (i % 4) * 0.08}"/>`;
+      }
+      detalle += `<path d="M52,116 Q130,128 208,116 L208,128 Q130,140 52,128 Z" fill="url(#pv-metal)"/>`;
+      aro = `<ellipse cx="130" cy="${b.cy}" rx="${b.rx + 1}" ry="${b.ry + 1}" fill="none" stroke="url(#pv-metal)" stroke-width="2.5"/>`;
+    } else if (mate.id === 'torpedo') {
+      // Acero pulido, cero curado: el brillo sale del degradado metálico
+      fondo = `url(#pv-acero)`;
+      detalle = `<path d="M118,110 L118,300" stroke="#fff" stroke-width="3" opacity=".25"/>`;
+      aro = `<ellipse cx="130" cy="${b.cy}" rx="${b.rx + 1}" ry="${b.ry + 1}" fill="none" stroke="#f4f7f8" stroke-width="2.2"/>`;
+    } else {
+      // Esmaltada, colores de autor: onda pintada a mano y pie de cerámica
+      detalle = `<path d="${cuerpo}" fill="url(#pv-onda)"/>`;
+      pie = `<path d="M96,290 Q130,300 164,290 L162,297 Q130,305 98,297 Z" fill="${shade(c, -0.45)}"/>`;
+    }
+
+    const L = b.cy - 4;
+    const bomb = svgBombilla(bombilla.id, bombilla.color, 130 + 16, b.cy + 4, L);
+
+    return `
+    <svg viewBox="0 0 310 320" role="img" aria-label="Vista previa de tu mate">
+      <defs>
+        <linearGradient id="pv-cuerpo" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stop-color="${shade(c, -0.45)}"/>
+          <stop offset="0.28" stop-color="${c}"/>
+          <stop offset="0.5" stop-color="${shade(c, 0.12)}"/>
+          <stop offset="0.78" stop-color="${c}"/>
+          <stop offset="1" stop-color="${shade(c, -0.5)}"/>
+        </linearGradient>
+        <linearGradient id="pv-acero" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stop-color="#4f575c"/><stop offset="0.16" stop-color="#dfe5e8"/>
+          <stop offset="0.32" stop-color="#9aa3a8"/><stop offset="0.5" stop-color="#f5f8f9"/>
+          <stop offset="0.7" stop-color="#8a9399"/><stop offset="0.86" stop-color="#c9d0d4"/>
+          <stop offset="1" stop-color="#3f474c"/>
+        </linearGradient>
+        <linearGradient id="pv-tubo" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stop-color="${shade(bombilla.color, -0.35)}"/>
+          <stop offset="0.45" stop-color="${shade(bombilla.color, 0.25)}"/>
+          <stop offset="1" stop-color="${shade(bombilla.color, -0.4)}"/>
+        </linearGradient>
+        <linearGradient id="pv-steel" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stop-color="#6b7276"/><stop offset="0.42" stop-color="#e9edef"/>
+          <stop offset="0.7" stop-color="#9aa1a5"/><stop offset="1" stop-color="#5d6468"/>
+        </linearGradient>
+        <linearGradient id="pv-metal" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stop-color="#7d8488"/><stop offset="0.4" stop-color="#eef2f4"/>
+          <stop offset="0.75" stop-color="#8f969a"/><stop offset="1" stop-color="#5c6265"/>
+        </linearGradient>
+        <linearGradient id="pv-cuero" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stop-color="#5e3a20"/><stop offset="0.4" stop-color="#9a6238"/><stop offset="1" stop-color="#6e4327"/>
+        </linearGradient>
+        <radialGradient id="pv-yerba-g" cx="0.5" cy="0.45" r="0.6">
+          <stop offset="0" stop-color="${shade(yerba.color, 0.12)}"/>
+          <stop offset="0.55" stop-color="${yerba.color}"/>
+          <stop offset="1" stop-color="${shade(yerba.color, -0.45)}"/>
+        </radialGradient>
+        <radialGradient id="pv-sombra">
+          <stop offset="0" stop-color="#000" stop-opacity="0.5"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="pv-grano" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.45" numOctaves="3" result="ruido"/>
+          <feColorMatrix in="ruido" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -3 1.6" result="puntos"/>
+          <feComposite in="puntos" in2="SourceGraphic" operator="in"/>
+        </filter>
+        <pattern id="pv-onda" width="40" height="28" patternUnits="userSpaceOnUse">
+          <path d="M0,14 Q10,6 20,14 T40,14" fill="none" stroke="#F6E7C8" stroke-width="2" opacity=".85"/>
+          <circle cx="20" cy="0" r="2" fill="#F6E7C8" opacity=".8"/>
+          <circle cx="20" cy="28" r="2" fill="#F6E7C8" opacity=".8"/>
+        </pattern>
+        <pattern id="pv-cincel" width="3" height="6" patternUnits="userSpaceOnUse">
+          <path d="M0,0 L3,6" stroke="#6b5438" stroke-width="0.7" opacity="0.55"/>
+        </pattern>
+        <clipPath id="pv-clip"><path d="${cuerpo}"/></clipPath>
+      </defs>
+
+      <ellipse cx="130" cy="296" rx="90" ry="10" fill="url(#pv-sombra)"/>
+      <path d="${cuerpo}" fill="${fondo}"/>
+      <path d="${cuerpo}" fill="#000" filter="url(#pv-grano)" opacity="${mate.id === 'torpedo' ? 0 : 0.12}"/>
+      <g clip-path="url(#pv-clip)">
+        ${detalle}
+        <ellipse cx="130" cy="${b.cy + 12}" rx="${b.rx + 4}" ry="${b.ry + 4}" fill="#000" opacity=".22"/>
+      </g>
+      <path d="${cuerpo}" fill="none" stroke="${shade(c, -0.5)}" stroke-width="1" opacity=".55"/>
+      <ellipse cx="${130 - b.rx * 0.6}" cy="${b.cy + 80}" rx="7" ry="36" fill="#fff" opacity=".18"/>
+      ${pie}
+
+      <ellipse cx="130" cy="${b.cy}" rx="${b.rx}" ry="${b.ry}" fill="${shade(c, -0.2)}" stroke="${shade(c, -0.5)}" stroke-width="1.2"/>
+      <ellipse cx="130" cy="${b.cy + 1}" rx="${b.rx - 6}" ry="${b.ry - 3}" fill="#1e140e"/>
+      <ellipse cx="130" cy="${b.cy + 1.5}" rx="${b.rx - 7.5}" ry="${b.ry - 4.5}" fill="url(#pv-yerba-g)"/>
+      ${svgYerba(yerba, b)}
+      ${aro}
+
+      ${bomb}
+      <text x="130" y="240" text-anchor="middle" font-family="Fraunces, serif" font-weight="700" font-size="13" fill="#FDFBF7" stroke="rgba(0,0,0,0.35)" stroke-width="0.4">${escHTML(grabado)}</text>
+      ${svgAccesorios(accesorios)}
+    </svg>`;
+  }
+
+  function actualizarPreview() {
+    const mate = buscarItem('mate', diseno.mate);
+    const yerba = buscarItem('yerba', diseno.yerba);
+    const bombilla = buscarItem('bombilla', diseno.bombilla);
+    const accesorios = diseno.accesorios.map(id => buscarItem('accesorios', id));
+    const grabado = document.getElementById('f-grabado').value.trim();
+
+    document.getElementById('pv-stage').innerHTML = svgPreview(mate, yerba, bombilla, accesorios, grabado);
+    document.getElementById('pv-caption').innerHTML =
+      `<b>${mate.nombre}:</b> ${mate.cuidado}<br><b>${yerba.nombre}:</b> ${yerba.perfil}`;
+    document.getElementById('pv-resumen').textContent =
+      `${mate.nombre} · ${yerba.nombre} · ${bombilla.nombre}`;
+
+    const filas = [
+      ['Uso', USOS.find(u => u.id === diseno.uso).nombre],
+      ['Mate', mate.nombre],
+      ['Yerba', yerba.nombre],
+      ['Bombilla', bombilla.nombre],
+      ['Accesorios', accesorios.length ? accesorios.map(a => a.nombre).join(', ') : 'Ninguno'],
+      ['Grabado', grabado || 'Sin grabado'],
+    ];
+    document.getElementById('pv-lista').innerHTML = filas.map(([k, v]) =>
+      `<li class="flex justify-between gap-4"><span class="text-cream/60">${k}</span><span class="font-semibold text-right">${v}</span></li>`
+    ).join('');
+    document.getElementById('pv-total').innerText = fmt(calcularTotal());
+  }
+
+  // Pedido: se guarda en Firestore si la config está cargada. Ver pedidos.html.
+  // Pegá acá la config de tu proyecto Firebase (Configuración del proyecto > Tus apps).
+  const FIREBASE_CONFIG = null;
+  let db = null;
+  try {
+    if (FIREBASE_CONFIG && window.firebase) {
+      firebase.initializeApp(FIREBASE_CONFIG);
+      db = firebase.firestore();
+    }
+  } catch (err) {
+    console.error('No se pudo iniciar Firebase', err);
+  }
+
+  function armarPedido() {
+    const valor = id => document.getElementById(id).value.trim();
+    const mate = buscarItem('mate', diseno.mate);
+    const yerba = buscarItem('yerba', diseno.yerba);
+    const bombilla = buscarItem('bombilla', diseno.bombilla);
+    return {
+      codigo: 'MC-' + Math.random().toString(36).slice(2, 6).toUpperCase(),
+      estado: 'nuevo',
+      cliente: { nombre: valor('f-nombre'), telefono: valor('f-telefono') },
+      diseno: {
+        uso: USOS.find(u => u.id === diseno.uso).nombre,
+        mate: mate.nombre,
+        yerba: yerba.nombre,
+        bombilla: bombilla.nombre,
+        accesorios: diseno.accesorios.map(id => buscarItem('accesorios', id).nombre),
+        grabado: valor('f-grabado'),
+        nota: valor('f-nota'),
+      },
+      total: calcularTotal(),
+      creado: new Date().toISOString(),
+    };
+  }
+
+  function textoPedido(p) {
+    const lineas = [
+      `Hola MATE & CAFÉ! Hice mi pedido ${p.codigo}:`,
+      `- Uso: ${p.diseno.uso}`,
+      `- Mate: ${p.diseno.mate}`,
+      `- Yerba: ${p.diseno.yerba}`,
+      `- Bombilla: ${p.diseno.bombilla}`,
+      `- Accesorios: ${p.diseno.accesorios.length ? p.diseno.accesorios.join(', ') : 'ninguno'}`,
+      `- Grabado: ${p.diseno.grabado || 'sin grabado'}`,
+    ];
+    if (p.diseno.nota) lineas.push(`- Nota: ${p.diseno.nota}`);
+    lineas.push(`- Total estimado: ${fmt(p.total)}`, `- A nombre de: ${p.cliente.nombre}`);
+    return lineas.join('\n');
+  }
+
+  function mostrarConfirmacion(pedido, guardado) {
+    const link = `https://wa.me/5491100000000?text=${encodeURIComponent(textoPedido(pedido))}`;
+    const aviso = guardado
+      ? `Recibimos tu pedido. Mostrá el código <b>${pedido.codigo}</b> en caja al retirar.`
+      : `No pudimos registrar el pedido en el local. Mandanos el código <b>${pedido.codigo}</b> por WhatsApp y lo confirmamos.`;
+    const caja = document.getElementById('pedido-confirmacion');
+    caja.innerHTML = `
+      <p class="mb-3">${aviso}</p>
+      <a href="${link}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-yerbaLight text-coffeeDark font-bold text-xs px-4 py-2 rounded-full hover:bg-white transition">
+        📱 Enviar también por WhatsApp
+      </a>`;
+    caja.classList.remove('hidden');
+    caja.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  async function enviarPedido(ev) {
+    ev.preventDefault();
+    const boton = document.getElementById('btn-enviar');
+    const pedido = armarPedido();
+
+    boton.disabled = true;
+    boton.innerText = 'Enviando…';
+    let guardado = false;
+    if (db) {
+      try {
+        await db.collection('pedidos').doc(pedido.codigo).set(pedido);
+        guardado = true;
+      } catch (err) {
+        console.error('Error al guardar el pedido', err);
+      }
+    }
+    mostrarConfirmacion(pedido, guardado);
+    boton.disabled = false;
+    boton.innerText = '📨 Enviar pedido al cajero';
+  }
+
+  // Inicializar
+  renderProducts(products);
+  renderDiseno();
+</script>
+</body>
+</html>
