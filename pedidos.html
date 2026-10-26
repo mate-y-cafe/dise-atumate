@@ -245,7 +245,6 @@
   function tarjeta(p) {
     const estado = ESTADOS.find(e => e.id === p.estado) || ESTADOS[0];
     const d = p.diseno || {};
-    const accesorios = d.accesorios && d.accesorios.length ? d.accesorios.map(esc).join(', ') : 'Ninguno';
     const codigo = esc(p.codigo);
     return `
       <article class="glass rounded-[1.5rem] p-5 flex flex-col gap-3">
@@ -261,7 +260,6 @@
           <p><b>Mate:</b> ${esc(d.mate)}</p>
           <p><b>Yerba:</b> ${esc(d.yerba)}</p>
           <p><b>Bombilla:</b> ${esc(d.bombilla)}</p>
-          <p><b>Accesorios:</b> ${accesorios}</p>
           <p><b>Grabado:</b> ${d.grabado ? esc(d.grabado) : 'Sin grabado'}</p>
           ${d.nota ? `<p class="mt-2 p-2 rounded-xl bg-yerba/10"><b>Nota:</b> ${esc(d.nota)}</p>` : ''}
         </div>
@@ -308,7 +306,6 @@
       <p><b>Mate:</b> ${esc(d.mate)}</p>
       <p><b>Yerba:</b> ${esc(d.yerba)}</p>
       <p><b>Bombilla:</b> ${esc(d.bombilla)}</p>
-      <p><b>Accesorios:</b> ${d.accesorios && d.accesorios.length ? d.accesorios.map(esc).join(', ') : 'Ninguno'}</p>
       <p><b>Grabado:</b> ${d.grabado ? esc(d.grabado) : 'Sin grabado'}</p>
       ${d.nota ? `<p><b>Nota:</b> ${esc(d.nota)}</p>` : ''}
       <hr>
